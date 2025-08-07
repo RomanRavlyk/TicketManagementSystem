@@ -19,10 +19,10 @@ class UserResponseSerializer(ModelSerializer):
 class AdminUserCreateSerializer(ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ["username", "email", "role", "is_staff", "is_superuser", "is_active"]
+        fields = ["username", "password", "email", "role", "is_staff", "is_superuser", "is_active"]
 
     def create(self, validated_data):
-        return CustomUser.objects.create(**validated_data)
+        return CustomUser.objects.create_user(**validated_data)
 
 class AdminUpdateUserSerializer(ModelSerializer):
     class Meta:

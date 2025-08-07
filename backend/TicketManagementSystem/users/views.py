@@ -25,6 +25,8 @@ class UserViewSet(ModelViewSet):
             return UserResponseSerializer
         return super().get_serializer_class()
 
+
+
 class AdminUserCreateAPIView(APIView):
     permission_classes = [IsSuperUserPermission]
     serializer_class = AdminUpdateUserSerializer

@@ -36,6 +36,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'rest_framework',
+    'django_filters',
     "rest_framework_simplejwt.token_blacklist",
     'django.contrib.admin',
     'django.contrib.auth',
@@ -110,7 +111,10 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '100/day',
         'user': '1000/day'
-    }
+    },
+    "DEFAULT_FILTER_BACKENDS": [
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ]
 }
 
 SIMPLE_JWT = {

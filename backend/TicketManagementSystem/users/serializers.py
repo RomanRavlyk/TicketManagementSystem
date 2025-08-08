@@ -1,6 +1,7 @@
 from rest_framework.serializers import ModelSerializer
 from .models import CustomUser
 
+#USER SERIALIZERS#
 class UserCreateSerializer(ModelSerializer):
     class Meta:
         model = CustomUser
@@ -16,7 +17,8 @@ class UserResponseSerializer(ModelSerializer):
         model = CustomUser
         fields = ["id", "username", "email", "role", "date_joined", "is_active"]
 
-class AdminUserCreateSerializer(ModelSerializer):
+#ADMIN SERIALIZERS#
+class AdminCreateUserSerializer(ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ["username", "password", "email", "role", "is_staff", "is_superuser", "is_active"]
@@ -29,7 +31,7 @@ class AdminUpdateUserSerializer(ModelSerializer):
         model = CustomUser
         fields = ["username", "email", "role", "is_staff", "is_superuser", "is_active"]
 
-class AdminUserResponseSerializer(ModelSerializer):
+class AdminResponseUserSerializer(ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ["id", "username", "email", "role", "is_staff", "is_superuser", "date_joined", "is_active", "last_login"]

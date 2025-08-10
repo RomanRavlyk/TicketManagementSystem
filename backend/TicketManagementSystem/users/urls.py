@@ -6,17 +6,9 @@ from .views import (AdminListORCreateUserView, AdminChangeUserAPIView, AdminUser
                     AdminUsersActiveInactiveStatsView, AdminUsersRegisteredStatsView,
                     UserViewSet)
 
-
 user_router = DefaultRouter()
 
 user_router.register(r'users', UserViewSet, basename='user')
-
-# users_urlpatterns = [
-#     path('', UserRegisterView.as_view(), name='register_user'),
-#     path('me/', UserGetMeView.as_view(), name='get_user_me'),
-#     path('<int:id>/', UserUpdateView.as_view(), name='change_user'),
-#     path('me/delete/', UserDeleteView.as_view(), name='delete_user'),
-# ]
 
 admin_urlpatterns = [
     path('users/<int:id>/', AdminChangeUserAPIView.as_view(), name='admin_change_user'),

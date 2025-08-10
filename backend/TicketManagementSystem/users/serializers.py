@@ -5,6 +5,26 @@ from rest_framework.validators import UniqueValidator
 
 # USER SERIALIZERS#
 class UserCreateSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(
+        validators=[
+            UniqueValidator(
+                queryset=CustomUser.objects.all(),
+                message="This username is already in use."
+            )
+        ], required=True
+    )
+
+    email = serializers.EmailField(
+        validators=[
+            UniqueValidator(
+                queryset=CustomUser.objects.all(),
+                message="This email is already in use."
+            )
+        ], required=True
+    )
+
+    password = serializers.CharField(write_only=True, required=True)
+
     class Meta:
         model = CustomUser
         fields = ["username", "email", "password"]
@@ -20,7 +40,7 @@ class UserChangeSerializer(serializers.ModelSerializer):
         ], required=False
     )
 
-    email = serializers.CharField(
+    email = serializers.EmailField(
         validators=[
             UniqueValidator(
                 queryset=CustomUser.objects.all(),
@@ -29,13 +49,11 @@ class UserChangeSerializer(serializers.ModelSerializer):
         ], required=False
     )
 
-    # todo create validator for user password
-    # password = serializers.CharField(validators=[], required=False)
+    password = serializers.CharField(write_only=True, required=False)
 
     class Meta:
         model = CustomUser
         fields = ["username", "email", "password"]
-
 
 
 class UserResponseSerializer(serializers.ModelSerializer):
@@ -46,6 +64,26 @@ class UserResponseSerializer(serializers.ModelSerializer):
 
 # ADMIN SERIALIZERS#
 class AdminCreateUserSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(
+        validators=[
+            UniqueValidator(
+                queryset=CustomUser.objects.all(),
+                message="This username is already in use."
+            )
+        ], required=True
+    )
+
+    email = serializers.EmailField(
+        validators=[
+            UniqueValidator(
+                queryset=CustomUser.objects.all(),
+                message="This email is already in use."
+            )
+        ], required=True
+    )
+
+    password = serializers.CharField(write_only=True, required=True)
+
     class Meta:
         model = CustomUser
         fields = ["username", "password", "email", "role", "is_staff", "is_superuser", "is_active"]
@@ -55,9 +93,29 @@ class AdminCreateUserSerializer(serializers.ModelSerializer):
 
 
 class AdminUpdateUserSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(
+        validators=[
+            UniqueValidator(
+                queryset=CustomUser.objects.all(),
+                message="This username is already in use."
+            )
+        ], required=False
+    )
+
+    email = serializers.EmailField(
+        validators=[
+            UniqueValidator(
+                queryset=CustomUser.objects.all(),
+                message="This email is already in use."
+            )
+        ], required=False
+    )
+
+    password = serializers.CharField(write_only=True, required=False)
+
     class Meta:
         model = CustomUser
-        fields = ["username", "email", "role", "is_staff", "is_superuser", "is_active"]
+        fields = ["username", "email", "password", "role", "is_staff", "is_superuser", "is_active"]
 
 
 class AdminResponseUserSerializer(serializers.ModelSerializer):

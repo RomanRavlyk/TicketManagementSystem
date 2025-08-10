@@ -5,7 +5,7 @@ from .models import CustomUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet
-
+from django.contrib.auth.password_validation import validate_password
 from .permissions import (IsUserPermission, IsSupportPermission,
                           IsSuperUserPermission, IsCurrentUserPermission)
 
@@ -33,6 +33,7 @@ class UserViewSet(ViewSet):
     def retrieve(self, request, *args, **kwargs):
         try:
             user = CustomUser.objects.get(id=kwargs['id'])
+            self.check_object_permissions(request, user)
             return Response(UserResponseSerializer(user).data, status=200)
         except CustomUser.DoesNotExist:
             return Response({"Error": "User not found"}, status=404)
@@ -41,11 +42,17 @@ class UserViewSet(ViewSet):
         try:
             serializer = UserCreateSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
+            password = serializer.validated_data.get('password')
+            if password:
+                try:
+                    validate_password(password)
+                except ValidationError as e:
+                    return Response({"password_errors": e.messages}, status=400)
+
             user = CustomUser.objects.create_user(**serializer.validated_data)
             return Response(UserResponseSerializer(user).data, status=201)
         except ValidationError as e:
             return Response({"error": e.message}, status=400)
-
 
     def update(self, request, *args, **kwargs):
         try:
@@ -56,12 +63,17 @@ class UserViewSet(ViewSet):
         self.check_object_permissions(request, user)
 
         serializer = UserChangeSerializer(user, data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(UserResponseSerializer(user).data, status=200)
-        else:
-            return Response({"message": serializer.errors}, status=400)
+        password = serializer.validated_data.get('password')
+        if password:
+            try:
+                validate_password(password)
+            except ValidationError as e:
+                return Response({"password_errors": e.messages}, status=400)
+
+        serializer.save()
+        return Response(UserResponseSerializer(user).data, status=200)
 
     def destroy(self, request, *args, **kwargs):
         try:
@@ -73,6 +85,7 @@ class UserViewSet(ViewSet):
         user.delete()
         return Response("User successfully deleted", status=200)
 
+
 # todo:
 # email send on user creation,
 # force password reset
@@ -81,7 +94,7 @@ class UserViewSet(ViewSet):
 class AdminListORCreateUserView(ListCreateAPIView):
     queryset = CustomUser.objects.all()
     permission_classes = [IsSuperUserPermission]
-    pagination_class = [] #add pagination
+    pagination_class = []  # add pagination
     serializer_class = AdminResponseUserSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['role']
@@ -92,6 +105,14 @@ class AdminListORCreateUserView(ListCreateAPIView):
         try:
             serializer = (AdminCreateUserSerializer(data=request.data))
             serializer.is_valid(raise_exception=True)
+
+            password = serializer.validated_data.get('password')
+            if password:
+                try:
+                    validate_password(password)
+                except ValidationError as e:
+                    return Response({"password_errors": e.messages}, status=400)
+
             created_user = serializer.save()
             return Response(AdminResponseUserSerializer(created_user).data)
         except ValidationError as e:
@@ -119,10 +140,18 @@ class AdminChangeUserAPIView(APIView):
             return Response({"Error": "User not exist"}, status=404)
 
         serializer = AdminUpdateUserSerializer(user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(AdminResponseUserSerializer(user).data)
-        return Response(serializer.errors, status=400)
+        serializer.is_valid()
+
+        password = serializer.validated_data.get('password')
+        if password:
+            try:
+                validate_password(password)
+            except ValidationError as e:
+                return Response({"password_errors": e.messages}, status=400)
+
+        serializer.save()
+
+        return Response(AdminResponseUserSerializer(user).data)
 
     def delete(self, request, **kwargs):
         try:

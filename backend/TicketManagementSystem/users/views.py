@@ -14,18 +14,30 @@ from .serializers import (UserCreateSerializer, UserChangeSerializer,
                           AdminUpdateUserSerializer, AdminCreateUserSerializer,
                           AdminUserRegisteredStatsSerializer)
 
-from rest_framework.generics import (ListCreateAPIView, ListAPIView,
-                                     CreateAPIView, RetrieveAPIView,
-                                     UpdateAPIView, DestroyAPIView)
+from rest_framework.generics import (ListCreateAPIView)
 
 from django_filters.rest_framework import DjangoFilterBackend
 
 
 # User Views
-class UserRegisterView(APIView):
-    permission_classes = []
+class UserViewSet(ViewSet):
+    queryset = CustomUser.objects.all()
+    lookup_field = 'id'
 
-    def post(self, request, *args, **kwargs):
+    def get_permissions(self):
+        if self.action == 'create':
+            return []
+        else:
+            return [IsCurrentUserPermission()]
+
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            user = CustomUser.objects.get(id=kwargs['id'])
+            return Response(UserResponseSerializer(user).data, status=200)
+        except CustomUser.DoesNotExist:
+            return Response({"Error": "User not found"}, status=404)
+
+    def create(self, request, *args, **kwargs):
         try:
             serializer = UserCreateSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
@@ -35,15 +47,7 @@ class UserRegisterView(APIView):
             return Response({"error": e.message}, status=400)
 
 
-class UserGetMeView(APIView):
-    def get(self, request, *args, **kwargs):
-        return Response(UserResponseSerializer(request.user).data, status=200)
-
-
-class UserUpdateView(APIView):
-    permission_classes = [IsCurrentUserPermission]
-
-    def put(self, request, *args, **kwargs):
+    def update(self, request, *args, **kwargs):
         try:
             user = CustomUser.objects.get(id=kwargs['id'])
         except CustomUser.DoesNotExist:
@@ -55,15 +59,16 @@ class UserUpdateView(APIView):
 
         if serializer.is_valid():
             serializer.save()
-            return Response("User successfully updated", status=200)
+            return Response(UserResponseSerializer(user).data, status=200)
         else:
             return Response({"message": serializer.errors}, status=400)
 
-class UserDeleteView(APIView):
-    permission_classes = [IsCurrentUserPermission]
+    def destroy(self, request, *args, **kwargs):
+        try:
+            user = CustomUser.objects.get(id=kwargs['id'])
+        except CustomUser.DoesNotExist:
+            return Response({"error": "User not found"}, status=404)
 
-    def delete(self, request):
-        user = request.user
         self.check_object_permissions(request, user)
         user.delete()
         return Response("User successfully deleted", status=200)

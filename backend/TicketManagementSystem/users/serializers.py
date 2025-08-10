@@ -29,15 +29,13 @@ class UserChangeSerializer(serializers.ModelSerializer):
         ], required=False
     )
 
+    # todo create validator for user password
+    # password = serializers.CharField(validators=[], required=False)
+
     class Meta:
         model = CustomUser
-        fields = ["username", "email"]
+        fields = ["username", "email", "password"]
 
-
-class UserChangePasswordSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CustomUser
-        fields = ["password"]
 
 
 class UserResponseSerializer(serializers.ModelSerializer):

@@ -1,24 +1,53 @@
-from rest_framework.serializers import ModelSerializer
+from rest_framework import serializers
 from .models import CustomUser
+from rest_framework.validators import UniqueValidator
 
-#USER SERIALIZERS#
-class UserCreateSerializer(ModelSerializer):
+
+# USER SERIALIZERS#
+class UserCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ["username", "email",]
+        fields = ["username", "email", "password"]
 
-class UserChangeSerializer(ModelSerializer):
+
+class UserChangeSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(
+        validators=[
+            UniqueValidator(
+                queryset=CustomUser.objects.all(),
+                message="This username is already in use."
+                )
+        ], required=False
+    )
+
+    email = serializers.CharField(
+        validators=[
+            UniqueValidator(
+                queryset=CustomUser.objects.all(),
+                message="This email is already in use."
+                )
+        ], required=False
+    )
+
     class Meta:
         model = CustomUser
-        fields = ["id", "username", "email"]
+        fields = ["username", "email"]
 
-class UserResponseSerializer(ModelSerializer):
+
+class UserChangePasswordSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ["password"]
+
+
+class UserResponseSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ["id", "username", "email", "role", "date_joined", "is_active"]
 
-#ADMIN SERIALIZERS#
-class AdminCreateUserSerializer(ModelSerializer):
+
+# ADMIN SERIALIZERS#
+class AdminCreateUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ["username", "password", "email", "role", "is_staff", "is_superuser", "is_active"]
@@ -26,12 +55,20 @@ class AdminCreateUserSerializer(ModelSerializer):
     def create(self, validated_data):
         return CustomUser.objects.create_user(**validated_data)
 
-class AdminUpdateUserSerializer(ModelSerializer):
+
+class AdminUpdateUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ["username", "email", "role", "is_staff", "is_superuser", "is_active"]
 
-class AdminResponseUserSerializer(ModelSerializer):
+
+class AdminResponseUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ["id", "username", "email", "role", "is_staff", "is_superuser", "date_joined", "is_active", "last_login"]
+        fields = ["id", "username", "email", "role", "is_staff", "is_superuser", "date_joined", "is_active",
+                  "last_login"]
+
+
+class AdminUserRegisteredStatsSerializer(serializers.Serializer):
+    start_date = serializers.DateTimeField(required=True)
+    end_date = serializers.DateTimeField(required=True)

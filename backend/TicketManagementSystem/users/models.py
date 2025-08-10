@@ -50,6 +50,3 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.username
-
-    def get_user_role(self):
-        return self.role

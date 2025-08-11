@@ -72,14 +72,13 @@ class UserViewSet(ViewSet):
         return Response("User successfully deleted", status=200)
 
 
-# todo:
-# email send on user creation,
-#maybe create that admin can create a list of users
+# todo: email send on user creation,
+#  maybe make that admin can create a list of users
 
 # ADMIN VIEWS#
 class AdminListORCreateUserView(ListCreateAPIView):
     queryset = CustomUser.objects.all().order_by('id')
-    # permission_classes = [IsSuperUserPermission]
+    permission_classes = [IsSuperUserPermission]
     serializer_class = AdminResponseUserSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['role']

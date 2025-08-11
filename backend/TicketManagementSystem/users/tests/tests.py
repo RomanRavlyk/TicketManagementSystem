@@ -52,6 +52,22 @@ class UsersAPITestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIsNotNone(response.data.get('access'))
 
+    def test_refresh_token(self):
+        response = self.client.post(reverse('token_obtain_pair'), {
+            "username": self.user_data["username"],
+            "password": self.user_data["password"],
+        }, format='json')
+
+        url = reverse('token_refresh')
+        refresh_token = {
+            "refresh": response.data["refresh"],
+        }
+
+        response = self.client.post(url, refresh_token, format='json')
+
+        self.assertEqual(response.status_code,  200)
+        self.assertNotEqual(response.data.get('refresh'), refresh_token["refresh"])
+
     def test_user_retrieve(self):
         response = self.client.get(self.detail_url)
         self.assertEqual(response.status_code, 200)
@@ -174,7 +190,7 @@ class UsersAPITestCase(APITestCase):
                           'This password is entirely numeric.'],
                            response.data)
 
-#ADMIN TESTS
+# ADMIN TESTS
 # @unittest.skip('skip')
 class AdminPanelTests(APITestCase):
 
@@ -490,3 +506,85 @@ class AdminPanelTests(APITestCase):
         self.assertEqual(response.data["Active"], 2)
         self.assertEqual(response.data["Inactive"], 0)
 
+    def test_is_user_have_permission_to_admin_create(self):
+        token_response = self.client.post(reverse('token_obtain_pair'), {
+            "username": self.user_data["username"],
+            "password": self.user_data["password"],
+        }, format='json')
+        access_token = token_response.data.get('access')
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + access_token)
+
+        user={
+            "username": self.user_data["username"],
+            "password": self.user_data["password"],
+            "email": self.user_data["email"],
+        }
+
+        response = self.client.post(self.create_user_url, user, format='json')
+        self.assertEqual(response.status_code, 403)
+
+    def test_is_user_have_permission_to_admin_list(self):
+        token_response = self.client.post(reverse('token_obtain_pair'), {
+            "username": self.user_data["username"],
+            "password": self.user_data["password"],
+        }, format='json')
+        access_token = token_response.data.get('access')
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + access_token)
+
+        response = self.client.get(self.create_user_url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_is_user_have_permission_to_admin_change(self):
+        token_response = self.client.post(reverse('token_obtain_pair'), {
+            "username": self.user_data["username"],
+            "password": self.user_data["password"],
+        }, format='json')
+        access_token = token_response.data.get('access')
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + access_token)
+
+        response = self.client.patch(self.change_user_url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_is_user_have_permission_to_perform_admin_delete(self):
+        token_response = self.client.post(reverse('token_obtain_pair'), {
+            "username": self.user_data["username"],
+            "password": self.user_data["password"],
+        }, format='json')
+        access_token = token_response.data.get('access')
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + access_token)
+
+        response = self.client.delete(self.change_user_url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_is_user_have_permission_to_admin_count_active(self):
+        token_response = self.client.post(reverse('token_obtain_pair'), {
+            "username": self.user_data["username"],
+            "password": self.user_data["password"],
+        }, format='json')
+        access_token = token_response.data.get('access')
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + access_token)
+
+        response = self.client.delete(self.count_active_url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_is_user_have_permission_to_admin_count_registered(self):
+        token_response = self.client.post(reverse('token_obtain_pair'), {
+            "username": self.user_data["username"],
+            "password": self.user_data["password"],
+        }, format='json')
+        access_token = token_response.data.get('access')
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + access_token)
+
+        response = self.client.delete(self.count_registered_url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_is_user_have_permission_to_admin_count_roles(self):
+        token_response = self.client.post(reverse('token_obtain_pair'), {
+            "username": self.user_data["username"],
+            "password": self.user_data["password"],
+        }, format='json')
+        access_token = token_response.data.get('access')
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + access_token)
+
+        response = self.client.delete(self.count_roles_url)
+        self.assertEqual(response.status_code, 403)

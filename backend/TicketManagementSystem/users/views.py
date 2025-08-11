@@ -5,9 +5,7 @@ from .models import CustomUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet
-from .permissions import (IsUserPermission, IsSupportPermission,
-                          IsSuperUserPermission, IsCurrentUserPermission)
-
+from .permissions import (IsSuperUserPermission, IsCurrentUserPermission)
 from .serializers import (UserCreateSerializer, UserChangeSerializer,
                           UserResponseSerializer, AdminResponseUserSerializer,
                           AdminUpdateUserSerializer, AdminCreateUserSerializer,
@@ -33,18 +31,18 @@ class UserViewSet(ViewSet):
         try:
             user = CustomUser.objects.get(id=kwargs['id'])
             self.check_object_permissions(request, user)
-            return Response(UserResponseSerializer(user).data, status=200)
+            return Response(UserResponseSerializer(user, context={'request': request}).data, status=200)
         except CustomUser.DoesNotExist:
             return Response({"Error": "User not found"}, status=404)
 
     def create(self, request, *args, **kwargs):
         try:
-            serializer = UserCreateSerializer(data=request.data)
+            serializer = UserCreateSerializer(data=request.data, context={'request': request})
             serializer.is_valid(raise_exception=True)
             serializer.save()
             created_user = CustomUser.objects.get(email=serializer.validated_data['email'])
 
-            return Response(UserResponseSerializer(created_user).data, status=201)
+            return Response(UserResponseSerializer(created_user, context={'request': request}).data, status=201)
 
         except ValidationError as e:
             return Response({"error": e.message}, status=400)
@@ -57,11 +55,11 @@ class UserViewSet(ViewSet):
 
         self.check_object_permissions(request, user)
 
-        serializer = UserChangeSerializer(user, data=request.data)
+        serializer = UserChangeSerializer(user, data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        return Response(UserResponseSerializer(user).data, status=200)
+        return Response(UserResponseSerializer(user, context={'request': request}).data, status=200)
 
     def destroy(self, request, *args, **kwargs):
         try:
@@ -76,36 +74,26 @@ class UserViewSet(ViewSet):
 
 # todo:
 # email send on user creation,
-#if is_superuser changing to True is_staff changing too
-#if role changing is_staff and is_superuser changing too
+#maybe create that admin can create a list of users
 
 # ADMIN VIEWS#
 class AdminListORCreateUserView(ListCreateAPIView):
-    queryset = CustomUser.objects.all()
-    permission_classes = [IsSuperUserPermission]
-    pagination_class = []  # add pagination
+    queryset = CustomUser.objects.all().order_by('id')
+    # permission_classes = [IsSuperUserPermission]
     serializer_class = AdminResponseUserSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['role']
     search_fields = ["username", "email"]
-    ordering_fields = ["role"]
+    ordering_fields = ["id", "role"]
 
     def create(self, request, *args, **kwargs):
         try:
-            serializer = (AdminCreateUserSerializer(data=request.data))
+            serializer = (AdminCreateUserSerializer(data=request.data, context={'request': request}))
             serializer.is_valid(raise_exception=True)
             created_user = serializer.save()
-            return Response(AdminResponseUserSerializer(created_user).data)
+            return Response(AdminResponseUserSerializer(created_user, context={'request': request}).data)
         except ValidationError as e:
             return Response({"error": e.messages}, status=400)
-
-    def list(self, request, *args, **kwargs):
-        try:
-            users = CustomUser.objects.all()
-            serializer = AdminResponseUserSerializer(users, many=True)
-            return Response(serializer.data, status=200)
-        except CustomUser.DoesNotExist:
-            return Response({"error": "User not found"}, status=404)
 
 class AdminChangeUserAPIView(APIView):
     permission_classes = [IsSuperUserPermission]
@@ -114,7 +102,7 @@ class AdminChangeUserAPIView(APIView):
     def get(self, request, *args, **kwargs):
         try:
             user = CustomUser.objects.get(id=kwargs['id'])
-            return Response(AdminResponseUserSerializer(user).data)
+            return Response(AdminResponseUserSerializer(user, context={'request': request}).data)
         except Exception as e:
             return Response({"error": str(e)}, status=404)
 
@@ -124,11 +112,11 @@ class AdminChangeUserAPIView(APIView):
         except CustomUser.DoesNotExist:
             return Response({"Error": "User not exist"}, status=404)
 
-        serializer = AdminUpdateUserSerializer(user, data=request.data, partial=True)
+        serializer = AdminUpdateUserSerializer(user, data=request.data, context={'request': request}, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        return Response(AdminResponseUserSerializer(user).data)
+        return Response(AdminResponseUserSerializer(user, context={'request': request}).data)
 
     def delete(self, request, **kwargs):
         try:

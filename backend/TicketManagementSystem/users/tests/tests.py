@@ -5,7 +5,7 @@ from rest_framework.reverse import reverse
 from ..models import CustomUser
 import unittest
 #UserTests
-
+#
 # @unittest.skip('skip')
 class UsersAPITestCase(APITestCase):
 
@@ -175,6 +175,7 @@ class UsersAPITestCase(APITestCase):
                            response.data)
 
 #ADMIN TESTS
+# @unittest.skip('skip')
 class AdminPanelTests(APITestCase):
 
     @classmethod

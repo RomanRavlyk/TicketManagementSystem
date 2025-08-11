@@ -6,7 +6,7 @@ from rest_framework.validators import UniqueValidator
 
 
 # USER SERIALIZERS#
-class UserCreateSerializer(serializers.ModelSerializer):
+class UserCreateSerializer(serializers.HyperlinkedModelSerializer):
     username = serializers.CharField(
         validators=[
             UniqueValidator(
@@ -31,6 +31,10 @@ class UserCreateSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ["username", "email", "password"]
 
+    extra_kwargs = {
+        'url': {'view_name': 'user-list'}
+    }
+
     def create(self, validated_data):
         password = validated_data["password"]
         try:
@@ -40,7 +44,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
         return CustomUser.objects.create_user(**validated_data)
 
-class UserChangeSerializer(serializers.ModelSerializer):
+class UserChangeSerializer(serializers.HyperlinkedModelSerializer):
     username = serializers.CharField(
         validators=[
             UniqueValidator(
@@ -65,6 +69,10 @@ class UserChangeSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ["username", "email", "password"]
 
+        extra_kwargs = {
+            'url': {'view_name': 'user-detail', 'lookup_field': 'id'}
+        }
+
     def update(self, instance, validated_data):
 
         instance.username = validated_data.get('username', instance.username)
@@ -84,14 +92,17 @@ class UserChangeSerializer(serializers.ModelSerializer):
 
 
 
-class UserResponseSerializer(serializers.ModelSerializer):
+class UserResponseSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ["id", "username", "email", "role", "date_joined", "is_active"]
+        fields = ["id", "url", "username", "email", "role", "date_joined", "is_active"]
 
+        extra_kwargs = {
+            'url': {'view_name': 'user-detail', "lookup_field": "id"}
+        }
 
 # ADMIN SERIALIZERS#
-class AdminCreateUserSerializer(serializers.ModelSerializer):
+class AdminCreateUserSerializer(serializers.HyperlinkedModelSerializer):
     username = serializers.CharField(
         validators=[
             UniqueValidator(
@@ -118,6 +129,10 @@ class AdminCreateUserSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ["username", "password", "email", "role", "is_active"]
 
+        extra_kwargs = {
+            'url': {'view_name': 'admin_create_user'}
+        }
+
     def create(self, validated_data):
         password = validated_data["password"]
         try:
@@ -135,7 +150,7 @@ class AdminCreateUserSerializer(serializers.ModelSerializer):
         return CustomUser.objects.create_user(**validated_data)
 
 
-class AdminUpdateUserSerializer(serializers.ModelSerializer):
+class AdminUpdateUserSerializer(serializers.HyperlinkedModelSerializer):
     username = serializers.CharField(
         validators=[
             UniqueValidator(
@@ -161,6 +176,10 @@ class AdminUpdateUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ["username", "email", "password", "role", "is_active"]
+
+        extra_kwargs = {
+            'url': {'view_name': 'admin_change_user', 'lookup_field': 'id'}
+        }
 
     def update(self, instance, validated_data):
         instance.username = validated_data.get('username', instance.username)
@@ -193,11 +212,15 @@ class AdminUpdateUserSerializer(serializers.ModelSerializer):
         return instance
 
 
-class AdminResponseUserSerializer(serializers.ModelSerializer):
+class AdminResponseUserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ["id", "username", "email", "role", "is_staff", "is_superuser", "date_joined", "is_active",
+        fields = ["id", "url", "username", "email", "role", "is_staff", "is_superuser", "date_joined", "is_active",
                   "last_login"]
+
+        extra_kwargs = {
+            'url': {'view_name': 'admin_change_user', "lookup_field": "id"}
+        }
 
 
 class AdminUserRegisteredStatsSerializer(serializers.Serializer):

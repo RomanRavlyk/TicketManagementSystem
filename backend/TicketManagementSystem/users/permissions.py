@@ -16,10 +16,7 @@ class IsSuperUserPermission(RolePermission):
 class IsSupportPermission(RolePermission):
     roles = ["SUPPORT"]
 
-class IsUserPermission(RolePermission):
-    roles = ["USER"]
-
-class IsCurrentUserPermission(BasePermission):
+class IsOwnerPermission(BasePermission):
     def has_permission(self, request, view):
         return request.user and request.user.is_authenticated
 

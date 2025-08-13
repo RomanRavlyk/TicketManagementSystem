@@ -5,7 +5,7 @@ from .models import CustomUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet
-from .permissions import (IsSuperUserPermission, IsCurrentUserPermission)
+from .permissions import (IsSuperUserPermission, IsOwnerPermission)
 from .serializers import (UserCreateSerializer, UserChangeSerializer,
                           UserResponseSerializer, AdminResponseUserSerializer,
                           AdminUpdateUserSerializer, AdminCreateUserSerializer,
@@ -25,7 +25,7 @@ class UserViewSet(ViewSet):
         if self.action == 'create':
             return []
         else:
-            return [IsCurrentUserPermission()]
+            return [IsOwnerPermission()]
 
     def retrieve(self, request, *args, **kwargs):
         try:

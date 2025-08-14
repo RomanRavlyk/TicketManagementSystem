@@ -5,82 +5,70 @@ from .models import CustomUser
 from rest_framework.validators import UniqueValidator
 
 
-# USER SERIALIZERS#
-class UserCreateSerializer(serializers.HyperlinkedModelSerializer):
+class BaseUserSerializer(serializers.HyperlinkedModelSerializer):
     username = serializers.CharField(
-        validators=[
-            UniqueValidator(
-                queryset=CustomUser.objects.all(),
-                message="This username is already in use."
-            )
-        ], required=True
+        validators=[UniqueValidator(
+            queryset=CustomUser.objects.all(),
+            message="This username is already in use."
+        )], required=False
     )
-
     email = serializers.EmailField(
-        validators=[
-            UniqueValidator(
-                queryset=CustomUser.objects.all(),
-                message="This email is already in use."
-            )
-        ], required=True
+        validators=[UniqueValidator(
+            queryset=CustomUser.objects.all(),
+            message="This email is already in use."
+        )], required=False
     )
 
+    def validate_password(self, password):
+        validate_password(password)
+        return password
+
+    class Meta:
+        model = CustomUser
+        fields = ["username", "email"]
+
+
+# USER SERIALIZERS#
+class UserCreateSerializer(BaseUserSerializer):
+    username = serializers.CharField(validators=[UniqueValidator(
+        queryset=CustomUser.objects.all(),
+        message="This username is already in use."
+    )], required=True)
+
+    email = serializers.EmailField(validators=[UniqueValidator(
+        queryset=CustomUser.objects.all(),
+        message="This email is already in use."
+    )], required=True)
     password = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = CustomUser
-        fields = ["username", "email", "password"]
-
+        fields = BaseUserSerializer.Meta.fields + ["password"]
 
     def create(self, validated_data):
         password = validated_data["password"]
-        try:
-            validate_password(password)
-        except ValidationError as e:
-            raise serializers.ValidationError(e.messages)
-
+        validate_password(password)
         return CustomUser.objects.create_user(**validated_data)
 
-class UserChangeSerializer(serializers.HyperlinkedModelSerializer):
-    username = serializers.CharField(
-        validators=[
-            UniqueValidator(
-                queryset=CustomUser.objects.all(),
-                message="This username is already in use."
-                )
-        ], required=False
-    )
 
-    email = serializers.EmailField(
-        validators=[
-            UniqueValidator(
-                queryset=CustomUser.objects.all(),
-                message="This email is already in use."
-                )
-        ], required=False
-    )
-
+class UserChangeSerializer(BaseUserSerializer):
     password = serializers.CharField(write_only=True, required=False)
 
     class Meta:
         model = CustomUser
-        fields = ["username", "email", "password"]
+        fields = BaseUserSerializer.Meta.fields + ["password"]
 
         extra_kwargs = {
             'url': {'view_name': 'user-detail', 'lookup_field': 'id'}
         }
 
     def update(self, instance, validated_data):
-
         instance.username = validated_data.get('username', instance.username)
         instance.email = validated_data.get('email', instance.email)
 
         if validated_data.get('password'):
             password = validated_data["password"]
-            try:
-                validate_password(password)
-            except ValidationError as e:
-                raise serializers.ValidationError(e.messages)
+            validate_password(password)
             instance.set_password(password)
 
         instance.save()
@@ -88,50 +76,37 @@ class UserChangeSerializer(serializers.HyperlinkedModelSerializer):
         return instance
 
 
-
-class UserResponseSerializer(serializers.HyperlinkedModelSerializer):
+class UserResponseSerializer(BaseUserSerializer):
     class Meta:
         model = CustomUser
-        fields = ["id", "url", "username", "email"]
+        fields = BaseUserSerializer.Meta.fields + ["id", "url"]
 
         extra_kwargs = {
             'url': {'view_name': 'user-detail', "lookup_field": "id"}
         }
 
+
 # ADMIN SERIALIZERS#
-class AdminCreateUserSerializer(serializers.HyperlinkedModelSerializer):
-    username = serializers.CharField(
-        validators=[
-            UniqueValidator(
-                queryset=CustomUser.objects.all(),
-                message="This username is already in use."
-            )
-        ], required=True
-    )
-
-    email = serializers.EmailField(
-        validators=[
-            UniqueValidator(
-                queryset=CustomUser.objects.all(),
-                message="This email is already in use."
-            )
-        ], required=True
-    )
-
+class AdminCreateUserSerializer(BaseUserSerializer):
+    username = serializers.CharField(validators=[UniqueValidator(
+        queryset=CustomUser.objects.all(),
+        message="This username is already in use."
+    )], required=True)
+    email = serializers.EmailField(validators=[UniqueValidator(
+        queryset=CustomUser.objects.all(),
+        message="This email is already in use."
+    )], required=True)
     role = serializers.ChoiceField(choices=["USER", "SUPPORT", "ADMIN"], required=True)
 
     password = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = CustomUser
-        fields = ["username", "password", "email", "role", "is_active"]
+        fields = BaseUserSerializer.Meta.fields + ["password", 'role', 'is_active']
 
     def create(self, validated_data):
         password = validated_data["password"]
-        try:
-            validate_password(password)
-        except ValidationError as e:
-            raise serializers.ValidationError(e.messages)
+        validate_password(password)
 
         if validated_data["role"] == "ADMIN":
             validated_data["is_staff"] = True
@@ -143,32 +118,14 @@ class AdminCreateUserSerializer(serializers.HyperlinkedModelSerializer):
         return CustomUser.objects.create_user(**validated_data)
 
 
-class AdminUpdateUserSerializer(serializers.HyperlinkedModelSerializer):
-    username = serializers.CharField(
-        validators=[
-            UniqueValidator(
-                queryset=CustomUser.objects.all(),
-                message="This username is already in use."
-            )
-        ], required=False
-    )
-
-    email = serializers.EmailField(
-        validators=[
-            UniqueValidator(
-                queryset=CustomUser.objects.all(),
-                message="This email is already in use."
-            )
-        ], required=False
-    )
-
+class AdminUpdateUserSerializer(BaseUserSerializer):
     role = serializers.ChoiceField(choices=["USER", "SUPPORT", "ADMIN"], required=True)
 
     password = serializers.CharField(write_only=True, required=False)
 
     class Meta:
         model = CustomUser
-        fields = ["username", "email", "password", "role", "is_active"]
+        fields = BaseUserSerializer.Meta.fields + ["password", 'role', 'is_active']
 
         extra_kwargs = {
             'url': {'view_name': 'admin_change_user', 'lookup_field': 'id'}
@@ -181,10 +138,7 @@ class AdminUpdateUserSerializer(serializers.HyperlinkedModelSerializer):
 
         if validated_data.get('password'):
             password = validated_data["password"]
-            try:
-                validate_password(password)
-            except ValidationError as e:
-                raise serializers.ValidationError(e.messages)
+            validate_password(password)
             instance.set_password(password)
 
         role = validated_data.get("role", instance.role)
@@ -205,10 +159,10 @@ class AdminUpdateUserSerializer(serializers.HyperlinkedModelSerializer):
         return instance
 
 
-class AdminResponseUserSerializer(serializers.HyperlinkedModelSerializer):
+class AdminResponseUserSerializer(BaseUserSerializer):
     class Meta:
         model = CustomUser
-        fields = ["id", "url", "username", "email", "role", "is_staff", "is_superuser", "date_joined", "is_active",
+        fields = BaseUserSerializer.Meta.fields + ["id", "url", "role", "is_staff", "is_superuser", "date_joined", "is_active",
                   "last_login"]
 
         extra_kwargs = {

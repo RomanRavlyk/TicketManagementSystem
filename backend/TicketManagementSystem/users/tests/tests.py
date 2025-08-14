@@ -186,9 +186,13 @@ class UsersAPITestCase(APITestCase):
         }
         response = self.client.post(self.list_url, update_data, format='json')
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(['This password is too common.',
-                          'This password is entirely numeric.'],
-                           response.data)
+        self.assertEqual(
+            response.data['password'],
+            [
+                'This password is too common.',
+                'This password is entirely numeric.'
+            ]
+        )
 
 # ADMIN TESTS
 # @unittest.skip('skip')
@@ -408,9 +412,13 @@ class AdminPanelTests(APITestCase):
 
         response = self.client.patch(self.change_user_url, user, format='json')
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(['This password is too common.',
-                          'This password is entirely numeric.'],
-                           response.data)
+        self.assertEqual(
+            response.data['password'],
+            [
+                'This password is too common.',
+                'This password is entirely numeric.'
+            ]
+        )
 
     def test_admin_change_user_wrong_email(self):
         user = {

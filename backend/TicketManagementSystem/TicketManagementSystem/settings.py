@@ -34,6 +34,9 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'ticket.apps.TicketConfig',
+    'comment.apps.CommentConfig',
+    'attachment.apps.AttachmentConfig',
     'users.apps.UsersConfig',
     'rest_framework',
     'django_filters',

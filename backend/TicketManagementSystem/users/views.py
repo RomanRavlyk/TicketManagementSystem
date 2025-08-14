@@ -71,6 +71,12 @@ class UserViewSet(ViewSet):
         user.delete()
         return Response("User successfully deleted", status=200)
 
+class UsersMeView(APIView):
+    permission_classes = [IsOwnerPermission]
+
+    def get(self, request):
+        user = CustomUser.objects.get(id=request.user.id)
+        return Response(UserResponseSerializer(user, context={'request': request}).data, status=200)
 
 # todo: email send on user creation,
 #  maybe make that admin can create a list of users

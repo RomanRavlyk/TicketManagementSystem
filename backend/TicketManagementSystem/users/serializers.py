@@ -31,9 +31,6 @@ class UserCreateSerializer(serializers.HyperlinkedModelSerializer):
         model = CustomUser
         fields = ["username", "email", "password"]
 
-    extra_kwargs = {
-        'url': {'view_name': 'user-list'}
-    }
 
     def create(self, validated_data):
         password = validated_data["password"]
@@ -95,7 +92,7 @@ class UserChangeSerializer(serializers.HyperlinkedModelSerializer):
 class UserResponseSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ["id", "url", "username", "email", "role", "date_joined", "is_active"]
+        fields = ["id", "url", "username", "email"]
 
         extra_kwargs = {
             'url': {'view_name': 'user-detail', "lookup_field": "id"}
@@ -128,10 +125,6 @@ class AdminCreateUserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = CustomUser
         fields = ["username", "password", "email", "role", "is_active"]
-
-        extra_kwargs = {
-            'url': {'view_name': 'admin_create_user'}
-        }
 
     def create(self, validated_data):
         password = validated_data["password"]

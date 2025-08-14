@@ -49,10 +49,11 @@ class TicketUpdateSerializer(serializers.HyperlinkedModelSerializer):
 
 class TicketResponseSerializer(serializers.HyperlinkedModelSerializer):
     created_by = UserResponseSerializer(read_only=True)
+    assigned_to = UserResponseSerializer(read_only=True)
 
     class Meta:
         model = Ticket
-        fields = ['id', 'url', 'title', 'description', 'created_by', 'status']
+        fields = ['id', 'url', 'title', 'description', 'assigned_to', 'created_by', 'status']
         created_by = UserResponseSerializer(read_only=True)
 
         extra_kwargs = {

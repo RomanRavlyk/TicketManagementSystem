@@ -71,12 +71,14 @@ class UserViewSet(ViewSet):
         user.delete()
         return Response("User successfully deleted", status=200)
 
+
 class UsersMeView(APIView):
     permission_classes = [IsOwnerPermission]
 
     def get(self, request):
         user = CustomUser.objects.get(id=request.user.id)
         return Response(UserResponseSerializer(user, context={'request': request}).data, status=200)
+
 
 # todo: email send on user creation,
 #  maybe make that admin can create a list of users
@@ -99,6 +101,7 @@ class AdminListORCreateUserView(ListCreateAPIView):
             return Response(AdminResponseUserSerializer(created_user, context={'request': request}).data)
         except ValidationError as e:
             return Response({"error": e.messages}, status=400)
+
 
 class AdminChangeUserAPIView(APIView):
     permission_classes = [IsSuperUserPermission]

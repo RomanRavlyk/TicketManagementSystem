@@ -17,7 +17,6 @@ from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 load_dotenv(dotenv_path=BASE_DIR / '.env')
@@ -29,7 +28,6 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv("DEBUG", False)
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -78,7 +76,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'TicketManagementSystem.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
@@ -118,13 +115,11 @@ REST_FRAMEWORK = {
         'anon': '100/day',
         'user': '1000/day'
     },
-    "DEFAULT_FILTER_BACKENDS": [
-        'django_filters.rest_framework.DjangoFilterBackend',
-    ]
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=1), #todo: change it to 5-15 minutes max
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),  # todo: change it to 5-15 minutes max
     "REFRESH_TOKEN_LIFETIME": timedelta(days=15),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
@@ -153,7 +148,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
@@ -164,7 +158,6 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/

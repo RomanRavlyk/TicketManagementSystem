@@ -4,7 +4,6 @@ from rest_framework import serializers
 from .models import CustomUser
 from rest_framework.validators import UniqueValidator
 
-
 class BaseUserSerializer(serializers.HyperlinkedModelSerializer):
     username = serializers.CharField(
         validators=[UniqueValidator(
@@ -153,7 +152,7 @@ class AdminUpdateUserSerializer(BaseUserSerializer):
             instance.is_staff = False
             instance.is_superuser = False
 
-        instance.is_active = validated_data.get("is_active")
+        instance.is_active = validated_data.get("is_active", instance.is_active)
         instance.save()
 
         return instance
@@ -162,8 +161,9 @@ class AdminUpdateUserSerializer(BaseUserSerializer):
 class AdminResponseUserSerializer(BaseUserSerializer):
     class Meta:
         model = CustomUser
-        fields = BaseUserSerializer.Meta.fields + ["id", "url", "role", "is_staff", "is_superuser", "date_joined", "is_active",
-                  "last_login"]
+        fields = BaseUserSerializer.Meta.fields + ["id", "url", "role", "is_staff", "is_superuser", "date_joined",
+                                                   "is_active",
+                                                   "last_login"]
 
         extra_kwargs = {
             'url': {'view_name': 'admin_change_user', "lookup_field": "id"}

@@ -4,7 +4,9 @@ from rest_framework.test import APITestCase
 from rest_framework.reverse import reverse
 from ..models import CustomUser
 import unittest
-#UserTests
+
+
+# UserTests
 #
 # @unittest.skip('skip')
 class UsersAPITestCase(APITestCase):
@@ -65,7 +67,7 @@ class UsersAPITestCase(APITestCase):
 
         response = self.client.post(url, refresh_token, format='json')
 
-        self.assertEqual(response.status_code,  200)
+        self.assertEqual(response.status_code, 200)
         self.assertNotEqual(response.data.get('refresh'), refresh_token["refresh"])
 
     def test_user_retrieve(self):
@@ -116,7 +118,6 @@ class UsersAPITestCase(APITestCase):
             email="some_example2@mail.com",
             password="Dsdasj2dskl1"
         )
-
 
         url = reverse('user-detail', kwargs={'id': other_user.id})
         response = self.client.get(url)
@@ -194,6 +195,7 @@ class UsersAPITestCase(APITestCase):
             ]
         )
 
+
 # ADMIN TESTS
 # @unittest.skip('skip')
 class AdminPanelTests(APITestCase):
@@ -232,7 +234,6 @@ class AdminPanelTests(APITestCase):
         cls.count_active_url = reverse("admin_count_active")
         cls.count_registered_url = reverse("admin_count_registered")
         cls.count_roles_url = reverse("admin_count_roles")
-
 
     def setUp(self):
         token_response = self.client.post(reverse('token_obtain_pair'), {
@@ -400,7 +401,6 @@ class AdminPanelTests(APITestCase):
         response = self.client.patch(wrong_url, user, format='json')
         self.assertEqual(response.status_code, 404)
 
-
     def test_admin_change_user_weak_password(self):
         user = {
             "username": "user",
@@ -432,7 +432,7 @@ class AdminPanelTests(APITestCase):
         response = self.client.patch(self.change_user_url, user, format='json')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(["Enter a valid email address."],
-                           response.data["email"])
+                         response.data["email"])
 
     def test_admin_change_used_email(self):
         user = {
@@ -446,7 +446,7 @@ class AdminPanelTests(APITestCase):
         response = self.client.patch(self.change_user_url, user, format='json')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(["This email is already in use."],
-                           response.data["email"])
+                         response.data["email"])
 
     def test_admin_change_used_username(self):
         user = {
@@ -460,7 +460,7 @@ class AdminPanelTests(APITestCase):
         response = self.client.patch(self.change_user_url, user, format='json')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(["This username is already in use."],
-                           response.data["username"])
+                         response.data["username"])
 
     # def test_admin_registered_stats(self):
     #     now = timezone.now()
@@ -522,7 +522,7 @@ class AdminPanelTests(APITestCase):
         access_token = token_response.data.get('access')
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + access_token)
 
-        user={
+        user = {
             "username": self.user_data["username"],
             "password": self.user_data["password"],
             "email": self.user_data["email"],

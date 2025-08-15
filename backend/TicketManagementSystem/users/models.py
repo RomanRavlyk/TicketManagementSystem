@@ -1,10 +1,12 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 
+
 class Role(models.TextChoices):
     USER = "USER", "User"
     SUPPORT = "SUPPORT", "Support"
     ADMIN = "ADMIN", "Admin"
+
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, username, email, password=None, **extra_fields):
@@ -33,6 +35,7 @@ class CustomUserManager(BaseUserManager):
             raise ValueError("Superuser must have is_superuser=True.")
 
         return self.create_user(username, email, password, **extra_fields)
+
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(default="", max_length=100, unique=True)

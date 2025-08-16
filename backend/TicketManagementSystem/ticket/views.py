@@ -1,15 +1,16 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from .models import Ticket
-
+from .models import Ticket, SupportTicketMarks
+from rest_framework.exceptions import MethodNotAllowed
 from .serializers import (TicketCreateSerializer, TicketResponseSerializer, TicketUpdateSerializer,
                           AdminTicketCreateSerializer, AdminTicketUpdateSerializer, AdminTicketResponseSerializer,
-                          SupportTicketResponseSerializer,
+                          SupportTicketResponseSerializer, SupportUpdateTicketSerializer,
+                          SupportCreateMarksSerializer, SupportResponseMarksSerializer, SupportUpdateMarksSerializer,
                           )
 
 from users.permissions import (IsSuperUserPermission, IsSupportPermission)
 from rest_framework.response import Response
-from .permissions import IsOwnerPermission, IsAssignedTo
+from .permissions import IsOwnerPermission, IsAssignedTo, IsOwnerPermissionMarks
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django.utils import timezone
@@ -56,9 +57,7 @@ class UserTicketViewSet(viewsets.ModelViewSet):
             serializer = TicketResponseSerializer(page, many=True, context={'request': request})
             return self.get_paginated_response(serializer.data)
 
-        tickets = self.get_queryset().filter(
-            created_by=request.user.id)  # add filtering for open/closed tickets, maybe some ordering
-        return Response(TicketResponseSerializer(tickets, context={'request': request}, many=True).data, status=200)
+        return Response(TicketResponseSerializer(queryset, context={'request': request}, many=True).data, status=200)
 
     def update(self, request, *args, **kwargs):
         ticket = self.get_object()
@@ -87,6 +86,8 @@ class UserTicketViewSet(viewsets.ModelViewSet):
         return Response({'message': 'Ticket has been closed'})
 
 
+#todo: create logic that support can take or release ticket(only for himself)
+
 class SupportTicketViewSet(viewsets.ModelViewSet):
     queryset = Ticket.objects.all()
     permission_classes = [IsSupportPermission, IsAssignedTo]
@@ -96,21 +97,35 @@ class SupportTicketViewSet(viewsets.ModelViewSet):
     ordering_fields = ['id', 'status', 'priority']
     search_fields = ['title']
 
+    def create(self, request, *args, **kwargs):
+        raise MethodNotAllowed('POST')
+
     def retrieve(self, request, *args, **kwargs):
         ticket = self.get_object()
+        support_marks = SupportTicketMarks.objects.filter(ticket=ticket)
         return Response(SupportTicketResponseSerializer(ticket, context={'request': request}).data, status=200)
 
     def list(self, request, *args, **kwargs):
         tickets = self.filter_queryset(self.get_queryset()).filter(assigned_to=request.user.id)
-        page=self.paginate_queryset(tickets)
+        page = self.paginate_queryset(tickets)
         if page is not None:
             serializer = SupportTicketResponseSerializer(page, many=True, context={'request': request})
             return self.get_paginated_response(serializer.data)
 
-        return Response(TicketResponseSerializer(tickets, context={'request': request}, many=True).data, status=200)
+        return Response(SupportTicketResponseSerializer(tickets, context={'request': request}, many=True).data,
+                        status=200)
 
-    # def update(self, request, *args, **kwargs):
-    #     ticket = self.get_object()
+    def update(self, request, *args, **kwargs):
+        ticket = self.get_object()
+
+        serializer = SupportUpdateTicketSerializer(ticket, data=request.data, context={'request': request})
+        serializer.is_valid()
+        serializer.save()
+        return Response(SupportTicketResponseSerializer(serializer.instance, context={'request': request}).data,
+                        status=200)
+
+    def partial_update(self, request, *args, **kwargs):
+        raise MethodNotAllowed('PATCH')
 
     def destroy(self, request, *args, **kwargs):
         ticket = self.get_object()
@@ -123,15 +138,75 @@ class SupportTicketViewSet(viewsets.ModelViewSet):
         ticket.save()
         return Response({'message': 'Ticket has been closed'})
 
-class SupportTicketMarksViewSet(viewsets.ModelViewSet):
-    pass
 
-#todo: admin stats for most active supports,
+class SupportTicketMarksViewSet(viewsets.ModelViewSet):
+    queryset = SupportTicketMarks.objects.all()
+    permission_classes = [IsSupportPermission, IsOwnerPermissionMarks]
+    lookup_field = 'id'
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ['id', 'support_user', 'support_status']
+    ordering_fields = ['id', 'support_user', 'support_status']
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return SupportCreateMarksSerializer
+        elif self.action == 'update' or self.action == 'partial_update':
+            return SupportUpdateMarksSerializer
+        return SupportResponseMarksSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = SupportCreateMarksSerializer(data=request.data,
+                                                  context={'request': request, 'ticket_id': kwargs.get('ticket_id')})
+        serializer.is_valid(raise_exception=True)
+        mark = serializer.save()
+
+        return Response(SupportResponseMarksSerializer(mark).data, status=200)
+
+
+    def list(self, request, *args, **kwargs):
+        ticket_id = kwargs['ticket_id']
+        tickets = self.filter_queryset(self.get_queryset()).filter(support_user=request.user.id, ticket=ticket_id)
+        page = self.paginate_queryset(tickets)
+        if page is not None:
+            serializer = SupportResponseMarksSerializer(page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+
+        return Response(SupportResponseMarksSerializer(tickets, context={'request': request}, many=True).data, status=200)
+
+    def retrieve(self, request, *args, **kwargs):
+        mark = self.get_object()
+        serializer = SupportResponseMarksSerializer(mark, context={'request': request})
+        return Response(serializer.data, status=200)
+
+    def update(self, request, *args, **kwargs):
+        mark = self.get_object()
+        serializer = SupportUpdateMarksSerializer(mark, data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(SupportResponseMarksSerializer(serializer.instance, context={'request': request}).data, )
+
+    def partial_update(self, request, *args, **kwargs):
+        mark = self.get_object()
+        serializer = SupportUpdateMarksSerializer(mark, data=request.data, context={'request': request}, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(SupportResponseMarksSerializer(serializer.instance, context={'request': request}).data, )
+
+    def destroy(self, request, *args, **kwargs):
+        mark = self.get_object()
+        mark.delete()
+        mark.save()
+        return Response({'message': 'Mark has been deleted'})
+
+
+# todo: admin stats for most active supports,
 # number of created tickets per time period
 
 class AdminTicketViewSet(viewsets.ModelViewSet):
     queryset = Ticket.objects.all()
-    # permission_classes = [IsSuperUserPermission]
+    permission_classes = [IsSuperUserPermission]
     serializer_class = AdminTicketResponseSerializer
     lookup_field = 'id'
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
@@ -144,7 +219,8 @@ class AdminTicketViewSet(viewsets.ModelViewSet):
         serializer = AdminTicketCreateSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(AdminTicketResponseSerializer(serializer.instance, context={'request': request}).data, status=200)
+        return Response(AdminTicketResponseSerializer(serializer.instance, context={'request': request}).data,
+                        status=200)
 
     def list(self, request, *args, **kwargs):
         tickets = self.filter_queryset(self.get_queryset())
@@ -166,14 +242,16 @@ class AdminTicketViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        return Response(AdminTicketResponseSerializer(serializer.instance, context={'request': request}).data, status=200)
+        return Response(AdminTicketResponseSerializer(serializer.instance, context={'request': request}).data,
+                        status=200)
 
     def partial_update(self, request, *args, **kwargs):
         ticket = self.get_object()
         serializer = AdminTicketUpdateSerializer(ticket, data=request.data, context={'request': request}, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(AdminTicketResponseSerializer(serializer.instance, context={'request': request}).data, status=200)
+        return Response(AdminTicketResponseSerializer(serializer.instance, context={'request': request}).data,
+                        status=200)
 
     def destroy(self, request, *args, **kwargs):
         ticket = self.get_object()

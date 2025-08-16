@@ -14,3 +14,10 @@ class IsAssignedTo(BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return request.user in obj.assigned_to.filter(id=request.user.id).all()
+
+class IsOwnerPermissionMarks(BasePermission):
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated
+
+    def has_object_permission(self, request, view, obj):
+        return obj.support_user == request.user

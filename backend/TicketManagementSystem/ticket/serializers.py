@@ -24,6 +24,35 @@ class TicketBaseSerializer(serializers.HyperlinkedModelSerializer):
         model = Ticket
         fields = ['title', 'description']
 
+class CreatedBySerializer(serializers.ModelSerializer):
+    url = serializers.HyperlinkedIdentityField(
+        view_name='user-detail',
+        lookup_field='id'
+    )
+
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'url']
+
+class AssignedUserSerializer(serializers.ModelSerializer):
+    url = serializers.HyperlinkedIdentityField(
+        view_name='user-detail',
+        lookup_field='id'
+    )
+
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'url']
+
+class CompletedBySerializer(serializers.ModelSerializer):
+    url = serializers.HyperlinkedIdentityField(
+        view_name='user-detail',
+        lookup_field='id'
+    )
+
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'url']
 
 class TicketCreateSerializer(TicketBaseSerializer):
     title = serializers.CharField(
@@ -67,8 +96,9 @@ class TicketUpdateSerializer(TicketBaseSerializer):
 
 
 class TicketResponseSerializer(TicketBaseSerializer):
-    created_by = UserResponseSerializer(read_only=True)
-    assigned_to = UserResponseSerializer(read_only=True, many=True)
+    created_by = CreatedBySerializer(read_only=True)
+    assigned_to = AssignedUserSerializer(many=True, read_only=True)
+    description = serializers.CharField(max_length=50)
 
     class Meta:
         model = Ticket
@@ -119,6 +149,11 @@ class SupportResponseMarksSerializer(serializers.ModelSerializer):
         model = SupportTicketMarks
         fields = "__all__"
 
+class SupportMarkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SupportTicketMarks
+        fields = ['id']
+
 
 class SupportUpdateTicketSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
@@ -133,13 +168,13 @@ class SupportUpdateTicketSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class SupportTicketResponseSerializer(TicketBaseSerializer):
-    created_by = UserResponseSerializer(read_only=True)
-    completed_by = UserResponseSerializer(read_only=True)
-    support_marks = SupportResponseMarksSerializer(source='ticket_mark', read_only=True, many=True)
+    created_by = CreatedBySerializer(read_only=True)
+    support_marks = SupportMarkSerializer(source='ticket_mark', read_only=True, many=True)
+    completed_by = CompletedBySerializer(read_only=True)
 
     class Meta:
         model = Ticket
-        fields = TicketBaseSerializer.Meta.fields + ['id', 'url', 'created_by', "completed_by", 'status',
+        fields = TicketBaseSerializer.Meta.fields + ['id', 'url', "created_by", "completed_by", 'status',
                                                      'priority', 'created_at', 'updated_at', 'closed_at',
                                                      'support_marks']
 
@@ -179,13 +214,20 @@ class AdminTicketCreateSerializer(TicketBaseSerializer):
         fields = TicketBaseSerializer.Meta.fields + ['assigned_to', 'created_by', 'status', 'priority']
 
     def create(self, validated_data):
+        assigned_to = validated_data.pop('assigned_to')
+
         if not validated_data.get('status'):
             validated_data['status'] = Ticket.Status.OPEN
 
         if not validated_data.get('priority'):
             validated_data['priority'] = Ticket.Priority.MEDIUM
 
-        return Ticket.objects.create(**validated_data)
+        ticket = Ticket.objects.create(**validated_data)
+        if assigned_to:
+            ticket.assigned_to.set(assigned_to)
+
+
+        return ticket
 
 
 class AdminTicketUpdateSerializer(TicketBaseSerializer):
@@ -222,10 +264,12 @@ class AdminTicketUpdateSerializer(TicketBaseSerializer):
 
 
 class AdminTicketResponseSerializer(TicketBaseSerializer):
-    created_by = UserResponseSerializer(read_only=True)
-    assigned_to = UserResponseSerializer(read_only=True, many=True)
-    completed_by = UserResponseSerializer(read_only=True)
+    created_by = CreatedBySerializer(read_only=True)
+    assigned_to = AssignedUserSerializer(many=True, read_only=True)
+    completed_by = CompletedBySerializer(read_only=True)
     support_marks = SupportResponseMarksSerializer(source='ticket_mark', read_only=True, many=True)
+    # support_marks = SupportMarkSerializer(source='ticket_mark', read_only=True, many=True)
+    # todo: uncomment when @action for marks will be created
 
     class Meta:
         model = Ticket

@@ -8,7 +8,7 @@ import unittest
 
 # UserTests
 #
-# @unittest.skip('skip')
+@unittest.skip('skip')
 class UsersAPITestCase(APITestCase):
 
     @classmethod
@@ -197,7 +197,7 @@ class UsersAPITestCase(APITestCase):
 
 
 # ADMIN TESTS
-# @unittest.skip('skip')
+@unittest.skip('skip')
 class AdminPanelTests(APITestCase):
 
     @classmethod

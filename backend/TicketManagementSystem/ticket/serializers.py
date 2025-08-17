@@ -170,12 +170,13 @@ class SupportUpdateTicketSerializer(serializers.HyperlinkedModelSerializer):
 class SupportTicketResponseSerializer(TicketBaseSerializer):
     created_by = CreatedBySerializer(read_only=True)
     support_marks = SupportMarkSerializer(source='ticket_mark', read_only=True, many=True)
+    assigned_to = AssignedUserSerializer(many=True, read_only=True)
     completed_by = CompletedBySerializer(read_only=True)
 
     class Meta:
         model = Ticket
         fields = TicketBaseSerializer.Meta.fields + ['id', 'url', "created_by", "completed_by", 'status',
-                                                     'priority', 'created_at', 'updated_at', 'closed_at',
+                                                     'priority', 'created_at', 'assigned_to', 'updated_at', 'closed_at',
                                                      'support_marks']
 
         extra_kwargs = {
@@ -279,3 +280,7 @@ class AdminTicketResponseSerializer(TicketBaseSerializer):
         extra_kwargs = {
             'url': {'view_name': 'ticket_admin-detail', "lookup_field": "id"}
         }
+
+class AdminCreatedTicketsSerializer(serializers.Serializer):
+    created_first = serializers.DateTimeField(required=True)
+    created_second = serializers.DateTimeField(required=True)

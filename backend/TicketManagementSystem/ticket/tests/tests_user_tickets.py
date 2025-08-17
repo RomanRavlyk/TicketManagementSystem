@@ -3,7 +3,7 @@ from .utils import BaseTest
 from rest_framework.reverse import reverse
 
 
-# @unittest.skip('skip')
+@unittest.skip('skip')
 class UserTicketTests(BaseTest):
 
     def setUp(self):

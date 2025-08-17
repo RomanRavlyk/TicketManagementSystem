@@ -4,11 +4,12 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from .models import Ticket, SupportTicketMarks
 from rest_framework.exceptions import MethodNotAllowed
+
 from .serializers import (TicketCreateSerializer, TicketResponseSerializer, TicketUpdateSerializer,
                           AdminTicketCreateSerializer, AdminTicketUpdateSerializer, AdminTicketResponseSerializer,
-                          SupportTicketResponseSerializer, SupportUpdateTicketSerializer,
-                          SupportCreateMarksSerializer, SupportResponseMarksSerializer, SupportUpdateMarksSerializer,
-                          )
+                          SupportTicketResponseSerializer, SupportUpdateTicketSerializer, SupportCreateMarksSerializer,
+                          SupportResponseMarksSerializer, SupportUpdateMarksSerializer, AdminCreatedTicketsSerializer, )
+
 from rest_framework.decorators import action
 from users.permissions import (IsSuperUserPermission, IsSupportPermission)
 from rest_framework.response import Response
@@ -88,16 +89,20 @@ class UserTicketViewSet(viewsets.ModelViewSet):
         return Response({'message': 'Ticket has been closed'}, status=200)
 
 
-# todo: create logic that support can take or release ticket(only for himself)
-
 class SupportTicketViewSet(viewsets.ModelViewSet):
     queryset = Ticket.objects.all()
-    permission_classes = [IsSupportPermission, IsAssignedTo]
+    permission_classes = [IsSupportPermission, IsAssignedTo, IsOwnerPermission]
     lookup_field = 'id'
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     filterset_fields = ['id', 'status', 'priority']
     ordering_fields = ['id', 'status', 'priority']
     search_fields = ['title']
+
+    def get_permissions(self):
+        if self.action in ['take', 'release']:
+            return [IsSupportPermission()]
+        else:
+            return [IsSupportPermission(), IsAssignedTo()]
 
     def create(self, request, *args, **kwargs):
         raise MethodNotAllowed('POST')
@@ -139,6 +144,18 @@ class SupportTicketViewSet(viewsets.ModelViewSet):
 
         ticket.save()
         return Response({'message': 'Ticket has been closed'}, status=200)
+
+    @action(detail=True, methods=['post'], url_path='take')
+    def take(self, request, id=None):
+        ticket = self.get_object()
+        ticket.assigned_to.add(request.user.id)
+        return Response({"message": f"successfully assigned to ticket: {ticket.id}"}, status=200)
+
+    @action(detail=True, methods=['post'], url_path='release')
+    def release(self, request, id=None):
+        ticket = self.get_object()
+        ticket.assigned_to.remove(request.user.id)
+        return Response({"message": f"successfully unassigned from ticket: {ticket.id}"}, status=200)
 
 
 class SupportTicketMarksViewSet(viewsets.ModelViewSet):
@@ -309,3 +326,18 @@ class AdminTicketViewSet(viewsets.ModelViewSet):
         elif request.method == 'DELETE':
             mark.delete()
             return Response({"message": "Mark deleted"}, status=200)
+
+    @action(detail=False, methods=['post'], url_path='created')
+    def tickets_created(self, request, id=None, mark_id=None):
+        serializer = AdminCreatedTicketsSerializer(data=request.data)
+        serializer.is_valid()
+        created_first = serializer.validated_data['created_first']
+        created_second = serializer.validated_data['created_second']
+
+        count = Ticket.objects.filter(created_at__gt=created_first, created_at__lt=created_second).count()
+
+        return Response({"result": count}, status=200)
+
+    # @action(detail=True, methods=['post'], url_path='/most_active')
+    # def most_active_support(self, request, id=None, mark_id=None):
+    #     queryset = self.get_queryset()

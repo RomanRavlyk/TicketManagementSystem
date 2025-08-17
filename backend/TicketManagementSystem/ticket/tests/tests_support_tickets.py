@@ -239,3 +239,22 @@ class UserSupportTests(BaseTest):
         self.authenticate(self.user_data1)
         response = self.client.delete(self.support_ticket_marks_url_detail)
         self.assertEqual(response.status_code, 403)
+
+    def test_support_take_ticket(self):
+        response = self.client.post(self.support_take_url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_support_assign_unexisting_ticket(self):
+        wrong_url = reverse("ticket_support-take", kwargs={"id": 321})
+        response = self.client.post(wrong_url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_support_release_ticket(self):
+        response = self.client.post(self.support_take_url)
+        response = self.client.post(self.support_release_url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_support_release_unexisting_ticket(self):
+        wrong_url = reverse("ticket_support-release", kwargs={"id": 321})
+        response = self.client.post(wrong_url)
+        self.assertEqual(response.status_code, 404)

@@ -140,6 +140,10 @@ class BaseTest(APITestCase):
         cls.support_ticket_url_detail = reverse("ticket_support-detail", kwargs={"id": cls.ticket1.id})
         cls.support_ticket_marks_url_detail = reverse("marks-detail",
                                                       kwargs={"ticket_id": cls.ticket1.id, "id": cls.mark1.id})
+
+        cls.support_take_url = reverse('ticket_support-take', kwargs={"id": cls.ticket1.id})
+        cls.support_release_url = reverse('ticket_support-release', kwargs={"id": cls.ticket1.id})
+
         cls.admin_ticket_url_detail = reverse("ticket_admin-detail", kwargs={"id": cls.ticket1.id})
         cls.admin_ticket_url_marks = reverse('ticket_admin-marks', kwargs={"id": cls.ticket1.id})
         cls.admin_ticket_url_marks_detail = reverse('ticket_admin-marks-detail',

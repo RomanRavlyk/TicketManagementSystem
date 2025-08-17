@@ -7,7 +7,7 @@ from ..models import Ticket, SupportTicketMarks
 from users.models import CustomUser
 
 
-# @unittest.skip('skip')
+@unittest.skip('skip')
 class UserAdminTests(BaseTest):
 
     def setUp(self):

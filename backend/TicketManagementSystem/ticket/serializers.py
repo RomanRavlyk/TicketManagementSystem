@@ -268,9 +268,7 @@ class AdminTicketResponseSerializer(TicketBaseSerializer):
     created_by = CreatedBySerializer(read_only=True)
     assigned_to = AssignedUserSerializer(many=True, read_only=True)
     completed_by = CompletedBySerializer(read_only=True)
-    support_marks = SupportResponseMarksSerializer(source='ticket_mark', read_only=True, many=True)
-    # support_marks = SupportMarkSerializer(source='ticket_mark', read_only=True, many=True)
-    # todo: uncomment when @action for marks will be created
+    support_marks = SupportMarkSerializer(source='ticket_mark', read_only=True, many=True)
 
     class Meta:
         model = Ticket

@@ -1,5 +1,4 @@
-from pickle import FALSE
-
+from django.db.models import Count, Max
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from .models import Ticket, SupportTicketMarks
@@ -226,10 +225,6 @@ class SupportTicketMarksViewSet(viewsets.ModelViewSet):
         mark.save()
         return Response({'message': 'Mark has been deleted'})
 
-
-# todo: admin stats for most active supports,
-#  number of created tickets per time period,
-
 class AdminTicketViewSet(viewsets.ModelViewSet):
     queryset = Ticket.objects.all()
     permission_classes = [IsSuperUserPermission]
@@ -338,6 +333,10 @@ class AdminTicketViewSet(viewsets.ModelViewSet):
 
         return Response({"result": count}, status=200)
 
-    # @action(detail=True, methods=['post'], url_path='/most_active')
-    # def most_active_support(self, request, id=None, mark_id=None):
-    #     queryset = self.get_queryset()
+    @action(detail=False, methods=['get'], url_path='most_active')
+    def most_active_support(self, request, id=None, mark_id=None):
+        queryset = Ticket.objects.values('completed_by').filter(completed_by__isnull=False)
+        max_count = queryset.annotate(total=Count("id")).aggregate(Max("total"))["total__max"]
+        most_active = queryset.annotate(total=Count("id")).filter(total=max_count)
+
+        return Response({"most_active_support": list(most_active)}, status=200)
